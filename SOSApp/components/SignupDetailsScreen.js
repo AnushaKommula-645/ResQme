@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, TextInput, TouchableOpacity, Text, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import axios from "axios";
 
-export default function SignupDetailsScreen({ navigation }) {
+export default function SignupDetailsScreen({ navigation, route }) {
+  const { phone, otp } = route.params;
+
   const [form, setForm] = useState({
-    username: "",
+    name: "",
     password: "",
     confirmPassword: "",
     age: "",
@@ -17,56 +20,56 @@ export default function SignupDetailsScreen({ navigation }) {
     emergency3: ""
   });
 
-  const handleChange = (key, value) => {
-    setForm({ ...form, [key]: value });
-  };
+  const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (form.password !== form.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-    alert("Signup successful!");
-    navigation.navigate("Login");
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/signup/verify", {
+        name: form.name,
+        email: form.gmail,
+        password: form.password,
+        phone,
+        emergencyNumbers: [form.emergency1, form.emergency2, form.emergency3],
+        otp
+      });
+
+      if (res.data.success) {
+        alert("Signup successful!");
+        navigation.navigate("Login");
+      }
+    } catch (err) {
+      console.log(err);
+      alert("Signup failed: " + err.response?.data?.message || err.message);
+    }
   };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>User Details</Text>
-
-        {[
-          { key: "username", placeholder: "Username" },
-          { key: "password", placeholder: "Password", secure: true },
-          { key: "confirmPassword", placeholder: "Confirm Password", secure: true },
-          { key: "age", placeholder: "Age", keyboard: "numeric" },
-          { key: "gmail", placeholder: "Gmail" },
-          { key: "place", placeholder: "Place" },
-          { key: "fatherName", placeholder: "Father's Name" },
-          { key: "motherName", placeholder: "Mother's Name" },
-          { key: "aadhar", placeholder: "Aadhar Number", keyboard: "numeric" },
-          { key: "emergency1", placeholder: "Emergency Contact 1", keyboard: "numeric" },
-          { key: "emergency2", placeholder: "Emergency Contact 2", keyboard: "numeric" },
-          { key: "emergency3", placeholder: "Emergency Contact 3", keyboard: "numeric" }
-        ].map((field) => (
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        {["name","password","confirmPassword","age","gmail","place","fatherName","motherName","aadhar","emergency1","emergency2","emergency3"].map((key) => (
           <TextInput
-            key={field.key}
-            placeholder={field.placeholder}
-            style={styles.input}
-            secureTextEntry={field.secure}
-            keyboardType={field.keyboard || "default"}
-            value={form[field.key]}
-            onChangeText={(val) => handleChange(field.key, val)}
+            key={key}
+            placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+            style={{ borderWidth:1, borderColor:"#ccc", marginBottom:15, padding:12, borderRadius:8 }}
+            secureTextEntry={key.includes("password")}
+            keyboardType={["age","aadhar","emergency1","emergency2","emergency3"].includes(key) ? "numeric" : "default"}
+            value={form[key]}
+            onChangeText={(val) => handleChange(key,val)}
           />
         ))}
-
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Submit</Text>
+        <TouchableOpacity onPress={handleSubmit} style={{ backgroundColor:"#044351", padding:15, borderRadius:8 }}>
+          <Text style={{ color:"#fff", textAlign:"center", fontWeight:"bold" }}>Submit</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { 

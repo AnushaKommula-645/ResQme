@@ -1,19 +1,32 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
 
 export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation();
 
-  const handleLogin = () => {
-    if (username && password) {
-      navigation.replace("HomeScreen");;
-    } else {
-      alert("Enter valid credentials");
+const handleLogin = async () => {
+  if (username && password) {
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
+        email: username,
+        password
+      });
+      if (res.data.success) {
+        navigation.replace("HomeScreen", { userId: res.data.user._id });
+      }
+    } catch (err) {
+      console.log(err);
+      alert("Login failed");
     }
-  };
+  } else {
+    alert("Enter valid credentials");
+  }
+};
+
 
   return (
     <View style={styles.container}>

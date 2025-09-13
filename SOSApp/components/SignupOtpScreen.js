@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
 
 export default function SignupOtpScreen() {
   const [mobile, setMobile] = useState("");
@@ -8,18 +9,26 @@ export default function SignupOtpScreen() {
   const [otpSent, setOtpSent] = useState(false);
   const navigation = useNavigation();
 
-  const sendOtp = () => {
+  const sendOtp = async () => {
     if (mobile.length === 10) {
-      setOtpSent(true);
-      // mock otp send
+      try {
+        const res = await axios.post("http://localhost:5000/api/auth/signup/send-otp", { phone: "+91" + mobile });
+        if (res.data.success) {
+          setOtpSent(true);
+          alert("OTP sent!");
+        }
+      } catch (err) {
+        console.log(err);
+        alert("Failed to send OTP");
+      }
     } else {
       alert("Enter valid mobile number");
     }
   };
 
-  const verifyOtp = () => {
-    if (otp.length === 4) {
-      navigation.navigate("SignupDetails");
+  const verifyOtp = async () => {
+    if (otp.length === 6) {
+      navigation.navigate("SignupDetails", { phone: "+91" + mobile, otp });
     } else {
       alert("Invalid OTP");
     }
@@ -56,16 +65,10 @@ export default function SignupOtpScreen() {
           <Text style={styles.buttonText}>Verify OTP</Text>
         </TouchableOpacity>
       )}
-
-      <View style={styles.loginContainer}>
-        <Text style={styles.loginText}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.loginLink}>Login</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { 
